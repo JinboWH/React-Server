@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:jee="http://www.springframework.org/schema/jee"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans  
+           http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+           http://www.springframework.org/schema/context
+		   http://www.springframework.org/schema/context/spring-context-4.0.xsd
+		   http://www.springframework.org/schema/tx 
+		   http://www.springframework.org/schema/tx/spring-tx-4.2.xsd
+		   http://www.springframework.org/schema/jee 
+		   http://www.springframework.org/schema/jee/spring-jee-4.0.xsd">
+
+	<context:annotation-config></context:annotation-config>
+
+	<jee:jndi-lookup id="oracleDataSource" jndi-name="java:jboss/datasources/ExampleDS"></jee:jndi-lookup>
+	<jee:jndi-lookup id="mysqlDataSource" jndi-name="java:jboss/datasources/MySqlDS"></jee:jndi-lookup>
+	
+
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<constructor-arg ref="oracleDataSource"></constructor-arg>
+	</bean>
+	
+	<bean id="userAction" class="greenlander.action.impl.UserActionImpl"></bean>
+	<bean id="userItemDao" class="greenlander.dao.impl.UserItemDaoImpl"></bean>
+	<bean id="taskItemDao" class="greenlander.dao.impl.MySqlConnectionImpl"></bean>
+	
+	<bean id="webSocketSessionManager" class="greenlander.websocket.sessionmanager.WebSocketSessionManager"></bean>
+	
+	<bean id="hibernateJpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+    	<property name="database" value="ORACLE"></property>
+    	<property name="showSql" value="true"></property>
+		<property name="databasePlatform" value="org.hibernate.dialect.Oracle10gDialect"></property>
+    </bean>
+	
+	<bean id="oracleSessionFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="persistenceUnitName" value="oracle" />
+        <property name="dataSource" ref="oracleDataSource" />
+        <property name="packagesToScan" value="greenlander.persistence.entity" />
+		<property name="jpaVendorAdapter" ref="hibernateJpaVendorAdapter"/>
+    </bean>
+    
+    <bean id="mysqlHibernateJpaVendorAdapter" class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter">
+    	<property name="database" value="MYSQL"></property>
+    	<property name="showSql" value="true"></property>
+		<property name="databasePlatform" value="org.hibernate.dialect.MySQL5Dialect"></property>
+    </bean>
+    
+    <bean id="mysqlSessionFactory" class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+		<property name="persistenceUnitName" value="mysql" />
+        <property name="dataSource" ref="mysqlDataSource" />
+        <property name="packagesToScan" value="greenlander.persistence.entity.mysql" />
+		<property name="jpaVendorAdapter" ref="mysqlHibernateJpaVendorAdapter"/>
+    </bean>
+
+	<tx:annotation-driven/>  
+
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="mysqlSessionFactory"/>
+   </bean>
+     
+     <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="add*" propagation="REQUIRED" />
+            <tx:method name="delete*" propagation="REQUIRED" />
+            <tx:method name="update*" propagation="REQUIRED" />
+        </tx:attributes>
+    </tx:advice>
+        
+</beans>  
